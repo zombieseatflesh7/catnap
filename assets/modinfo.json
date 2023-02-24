@@ -3,8 +3,9 @@
   "name": "Catnap",
   "version": "1.0.0",
   "authors": "Dual",
-  "description": "Lets you nap anywhere to pass time up to 10x faster. All living players must hold DOWN and nothing else while on a flat surface to begin snoozin'.",
+  "description": "Lets you sleep anywhere to speed up time. Just hold DOWN on a flat surface to start snoozin'<LINE><LINE>Note that frames might be skipped if there's a lot happening on-screen<LINE><LINE>Code at github.com/Dual-Iron/catnap and art by twitter.com/GarbageWastes",
   "requirements": [],
   "requirements_names": [],
+  "tags": [ "Game Mechanics" ],
   "checksum_override_version": false
 }

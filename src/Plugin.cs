@@ -22,6 +22,7 @@ sealed class SleepData
 [BepInPlugin("com.dual.catnap", "Catnap", "1.0.0")]
 sealed class Plugin : BaseUnityPlugin
 {
+    const int maxSpeedMultiplier = 10;
     const int startCurl = 60;
     const int startSleeping = 120;
     const int maxSleeping = startSleeping + 400;
@@ -90,8 +91,8 @@ sealed class Plugin : BaseUnityPlugin
             if (dt > 1 / 40f)
                 dt = 1 / 40f;
 
-            // run game up to 10× faster while sleeping
-            var extraFps = RWCustom.Custom.LerpMap(sleepingAmount, startSleeping, maxSleeping, 0, 40 * 10) - self.framesPerSecond;
+            // run game up to N× faster while sleeping
+            var extraFps = RWCustom.Custom.LerpMap(sleepingAmount, startSleeping, maxSleeping, 0, 40 * maxSpeedMultiplier) - self.framesPerSecond;
 
             if (extraFps > 0) {
                 self.myTimeStacker += dt * extraFps;

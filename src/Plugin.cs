@@ -19,7 +19,7 @@ sealed class SleepData
     public bool wasSleeping;
 }
 
-[BepInPlugin("com.dual.catnap", "Catnap", "1.0.0")]
+[BepInPlugin("com.dual.catnap", "Catnap", "1.0.1")]
 sealed class Plugin : BaseUnityPlugin
 {
     const int maxSpeedMultiplier = 10;
@@ -189,11 +189,11 @@ sealed class Plugin : BaseUnityPlugin
 
     private static void SleepUpdate(Player self, SleepData data)
     {
-        bool canSleep = self.Consious && self.airInLungs >= 0.95f && self.Submersion <= 0.05f && self.grabbedBy.Count == 0 && self.abstractCreature.Room?.shelter == false &&
+        bool canSleep = self.abstractPhysicalObject.Room?.shelter == false && self.Consious && self.airInLungs >= 0.95f && self.Submersion <= 0.05f && self.grabbedBy.Count == 0 &&
             (self.bodyChunks[0].pos - self.bodyChunks[0].lastPos).sqrMagnitude < 4f &&
             (self.bodyChunks[1].pos - self.bodyChunks[1].lastPos).sqrMagnitude < 4f;
 
-        if (canSleep && self.bodyMode == Player.BodyModeIndex.Crawl && self.animation == Player.AnimationIndex.None && self.input[0].x == 0 && self.input[0].y < 0) {
+        if (canSleep && self.bodyMode == Player.BodyModeIndex.Crawl && self.animation == Player.AnimationIndex.None && !self.input[0].thrw && !self.input[0].pckp && self.input[0].x == 0 && self.input[0].y < 0) {
             data.sleepDuration++;
         }
         else {
@@ -212,7 +212,7 @@ sealed class Plugin : BaseUnityPlugin
         }
 
         if (data.sleepDuration > startCurl) {
-            self.forceSleepCounter = data.sleepDuration - startCurl;
+            self.sleepCurlUp = Mathf.Clamp01(3f * (data.sleepDuration - startCurl) / (maxSleeping - startCurl));
             data.wasSleeping = true;
         }
 

@@ -1,7 +1,7 @@
 ﻿{
   "id": "catnap",
   "name": "Catnap",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "authors": "Dual",
   "description": "Lets you sleep anywhere to speed up time. Just hold DOWN on a flat surface to start snoozin'<LINE><LINE>Note that frames might be skipped if there's a lot happening on-screen<LINE><LINE>Code at github.com/Dual-Iron/catnap and art by twitter.com/GarbageWastes",
   "requirements": [],

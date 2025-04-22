@@ -1,9 +1,9 @@
 ﻿{
   "id": "catnap",
   "name": "Catnap",
-  "version": "1.0.1",
-  "authors": "Dual",
-  "description": "Lets you sleep anywhere to speed up time. Just hold DOWN on a flat surface to start snoozin'<LINE><LINE>Note that frames might be skipped if there's a lot happening on-screen<LINE><LINE>Code at github.com/Dual-Iron/catnap and art by twitter.com/GarbageWastes",
+  "version": "1.0.2",
+  "authors": "Dual, Zombieseatflesh7",
+  "description": "Lets you sleep anywhere to speed up time<LINE>Just hold DOWN on a flat surface to start snoozin'<LINE>Time will accelerate up to 10x<LINE>This may cause significant frame drops in larger regions",
   "requirements": [],
   "requirements_names": [],
   "tags": [ "Game Mechanics" ],

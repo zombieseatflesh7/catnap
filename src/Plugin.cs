@@ -1,4 +1,6 @@
 ﻿using BepInEx;
+using Mono.Cecil.Cil;
+using MonoMod.Cil;
 using MonoMod.RuntimeDetour;
 using System;
 using System.Runtime.CompilerServices;
@@ -19,7 +21,7 @@ sealed class SleepData
     public bool wasSleeping;
 }
 
-[BepInPlugin("com.dual.catnap", "Catnap", "1.0.1")]
+[BepInPlugin("com.dual.catnap", "Catnap", "1.0.2")]
 sealed class Plugin : BaseUnityPlugin
 {
     const int maxSpeedMultiplier = 10;
@@ -27,6 +29,7 @@ sealed class Plugin : BaseUnityPlugin
     const int startSleeping = 120;
     const int maxSleeping = startSleeping + 400;
     const int maxGroggy = 600;
+    const float sleepVolumeMult = 0.25f;
 
     static readonly ConditionalWeakTable<Player, SleepData> sleepData = new();
 
@@ -36,7 +39,8 @@ sealed class Plugin : BaseUnityPlugin
     {
         new Hook(typeof(VirtualMicrophone).GetMethod("get_InWorldSoundsVolumeGoal"), GetterInWorldSoundsVolumeGoal);
 
-        On.MainLoopProcess.RawUpdate += MainLoopProcess_RawUpdate;  // speed up time
+        On.MainLoopProcess.RawUpdate += MainLoopProcess_RawUpdate;  // speed up update rate
+        IL.MainLoopProcess.RawUpdate += MainLoopProcess_RawUpdateIL;// raise max game updates per frame
         On.HUD.HUD.Update += HUD_Update;                            // open hud while sleeping
         On.HUD.FoodMeter.Update += FoodMeter_Update;                // prevent food bar from moving when cat napping
         On.HUD.FoodMeter.Draw += FoodMeter_Draw;                    // prevent food bar from moving when cat napping
@@ -50,7 +54,7 @@ sealed class Plugin : BaseUnityPlugin
     {
         int duration = GlobalSleepDuration(self.room.game);
         if (duration != int.MaxValue) {
-            return orig(self) * Mathf.Lerp(1, 0.25f, duration / (float)maxSleeping);
+            return orig(self) * Mathf.Lerp(1, sleepVolumeMult, duration / (float)maxSleeping);
         }
         return orig(self);
     }
@@ -74,39 +78,41 @@ sealed class Plugin : BaseUnityPlugin
 
     private void MainLoopProcess_RawUpdate(On.MainLoopProcess.orig_RawUpdate orig, MainLoopProcess self, float dt)
     {
-        try {
-            orig(self, dt);
-
-            if (self is not RainWorldGame game || !game.IsStorySession || game.pauseMenu != null || !game.processActive) {
-                return;
-            }
-
-            int sleepingAmount = GlobalSleepDuration(game);
-            if (sleepingAmount <= startSleeping) {
-                return;
-            }
-
-            // If it takes more than one "tick duration" to finish an update, the game is lagging. Normally, the game would tick multiple times to make up for this,
-            // but we don't want to make the lag worse, so we simply pretend only one "tick duration" has passed.
-            if (dt > 1 / 40f)
-                dt = 1 / 40f;
-
+        if (self is RainWorldGame game && game.IsStorySession && game.pauseMenu == null && game.processActive)
+        {
             // run game up to N× faster while sleeping
-            var extraFps = RWCustom.Custom.LerpMap(sleepingAmount, startSleeping, maxSleeping, 0, 40 * maxSpeedMultiplier) - self.framesPerSecond;
+            int sleepingAmount = GlobalSleepDuration(game);
+            if (sleepingAmount > startSleeping)
+                self.framesPerSecond = (int)RWCustom.Custom.LerpMap(sleepingAmount, startSleeping, maxSleeping, self.framesPerSecond, 40 * maxSpeedMultiplier);
+        }
 
-            if (extraFps > 0) {
-                self.myTimeStacker += dt * extraFps;
-                while (self.myTimeStacker > 1) {
-                    self.myTimeStacker -= 1;
-                    self.manager.rainWorld.rewiredInputManager.SendMessage("Update");
-                    self.Update();
-                }
-                self.GrafUpdate(self.myTimeStacker);
-            }
+        orig(self, dt);
+    }
+
+    private void MainLoopProcess_RawUpdateIL(MonoMod.Cil.ILContext il)
+    {
+        ILCursor c = new ILCursor(il);
+        try
+        { // raise max game updates per frame depending on desired update rate
+            c.GotoNext(
+                i => i.MatchLdloc(0),
+                i => i.MatchLdcI4(2)
+                );
+            c.GotoNext();
+            c.Remove();
+            c.Emit(OpCodes.Ldarg_0);
+            c.EmitDelegate(GetMaxGameUpdatesPerFrame);
         }
-        catch (Exception e) {
-            Logger.LogError($"Main loop process {self.GetType()} threw an uncaught exception.\n" + e);
+        catch (Exception ex)
+        {
+            Logger.LogError("Failed to patch MainLoopProcess.RawUpdate");
+            Logger.LogError(ex.Message);
         }
+    }
+
+    private static int GetMaxGameUpdatesPerFrame(MainLoopProcess mlp)
+    {
+        return Math.Max(2, (mlp.framesPerSecond + 19) / 40 - 1);
     }
 
     private void HUD_Update(On.HUD.HUD.orig_Update orig, HUD.HUD self)

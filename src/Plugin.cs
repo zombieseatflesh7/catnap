@@ -14,22 +14,22 @@ using UnityEngine;
 
 namespace Catnap;
 
-sealed class SleepData
+internal class SleepData
 {
     public int sleepDuration;
     public int groggy;
     public bool wasSleeping;
 }
 
-[BepInPlugin("com.dual.catnap", "Catnap", "1.0.2")]
-sealed class Plugin : BaseUnityPlugin
+[BepInPlugin("com.dual.catnap", "Catnap", "1.0.3")]
+internal class Plugin : BaseUnityPlugin
 {
-    const int maxSpeedMultiplier = 10;
-    const int startCurl = 60;
-    const int startSleeping = 120;
-    const int maxSleeping = startSleeping + 400;
-    const int maxGroggy = 600;
-    const float sleepVolumeMult = 0.25f;
+    internal static int maxSpeedMultiplier = 6;
+    internal const int startCurl = 60;
+    internal const int startSleeping = 120;
+    internal static int maxSleeping = startSleeping + 320;
+    internal const int maxGroggy = 400;
+    internal static float sleepVolumeMult = 0.25f;
 
     static readonly ConditionalWeakTable<Player, SleepData> sleepData = new();
 
@@ -37,8 +37,9 @@ sealed class Plugin : BaseUnityPlugin
 
     public void OnEnable()
     {
-        new Hook(typeof(VirtualMicrophone).GetMethod("get_InWorldSoundsVolumeGoal"), GetterInWorldSoundsVolumeGoal);
+        On.RainWorld.OnModsInit += OnModInit;
 
+        new Hook(typeof(VirtualMicrophone).GetMethod("get_InWorldSoundsVolumeGoal"), GetterInWorldSoundsVolumeGoal); // lower game volume when sleeping
         On.MainLoopProcess.RawUpdate += MainLoopProcess_RawUpdate;  // speed up update rate
         IL.MainLoopProcess.RawUpdate += MainLoopProcess_RawUpdateIL;// raise max game updates per frame
         On.HUD.HUD.Update += HUD_Update;                            // open hud while sleeping
@@ -50,11 +51,18 @@ sealed class Plugin : BaseUnityPlugin
         On.Player.JollyEmoteUpdate += Player_JollyEmoteUpdate;      // override jolly sleep emote
     }
 
+    private void OnModInit(On.RainWorld.orig_OnModsInit orig, RainWorld self)
+    {
+        orig(self);
+        MachineConnector.SetRegisteredOI("catnap", new CatnapRemixMenu(this));
+    }
+
     private float GetterInWorldSoundsVolumeGoal(Func<VirtualMicrophone, float> orig, VirtualMicrophone self)
     {
         int duration = GlobalSleepDuration(self.room.game);
         if (duration != int.MaxValue) {
-            return orig(self) * Mathf.Lerp(1, sleepVolumeMult, duration / (float)maxSleeping);
+            float f = Mathf.Clamp01( (duration - startCurl) / (float)(maxSleeping - startCurl) );
+            return orig(self) * Mathf.Lerp(1, sleepVolumeMult, f);
         }
         return orig(self);
     }

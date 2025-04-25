@@ -1,9 +1,9 @@
 ﻿{
   "id": "catnap",
-  "name": "Catnap",
-  "version": "1.0.2",
+  "name": "Catnap Resnored",
+  "version": "1.0.3",
   "authors": "Dual, Zombieseatflesh7",
-  "description": "Lets you sleep anywhere to speed up time<LINE>Just hold DOWN on a flat surface to start snoozin'<LINE>Time will accelerate up to 10x<LINE>This may cause significant frame drops in larger regions",
+  "description": "Lets you sleep anywhere to speed up time<LINE>Just hold DOWN on a flat surface to start snoozin'<LINE>Time will accelerate up to 10x (configurable)<LINE>This may cause significant frame drops in larger regions",
   "requirements": [],
   "requirements_names": [],
   "tags": [ "Game Mechanics" ],
